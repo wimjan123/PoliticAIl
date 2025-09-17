@@ -1,0 +1,224 @@
+/* Taskbar Styles */
+.taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  user-select: none;
+}
+
+.taskbar-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  white-space: nowrap;
+  position: relative;
+}
+
+.taskbar-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.taskbar-button.active {
+  background: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Start Button */
+.start-button {
+  margin-right: 12px;
+  font-weight: 600;
+}
+
+.start-icon {
+  font-size: 18px;
+}
+
+.start-text {
+  font-size: 16px;
+  margin-left: 4px;
+}
+
+/* App Indicators */
+.app-indicators {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-indicators::-webkit-scrollbar {
+  display: none;
+}
+
+.app-button {
+  min-width: 48px;
+  max-width: 180px;
+  position: relative;
+}
+
+.app-button.minimized {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.app-button .app-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.app-button .app-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.minimized-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* System Tray */
+.system-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.tray-button {
+  position: relative;
+}
+
+.notification-icon {
+  font-size: 16px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 1;
+}
+
+.system-status {
+  display: flex;
+  gap: 6px;
+}
+
+.network-status,
+.battery-status {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.taskbar-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+.taskbar-clock:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.time {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.date {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .taskbar {
+    height: 70px;
+    padding: 0 8px;
+  }
+
+  .start-text {
+    display: none;
+  }
+
+  .app-name {
+    display: none;
+  }
+
+  .app-button {
+    min-width: 44px;
+    padding: 10px;
+  }
+
+  .taskbar-clock {
+    min-width: 60px;
+    margin-left: 8px;
+  }
+
+  .time {
+    font-size: 12px;
+  }
+
+  .date {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .taskbar {
+    height: 80px;
+    padding: 0 4px;
+  }
+
+  .start-button {
+    padding: 12px 8px;
+    margin-right: 4px;
+  }
+
+  .system-status {
+    display: none;
+  }
+
+  .taskbar-clock {
+    margin-left: 4px;
+  }
+}

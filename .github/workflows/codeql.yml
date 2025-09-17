@@ -1,0 +1,78 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript' ]
+        # Add 'rust' when Tauri backend code is substantial
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          # Use default queries plus security-and-quality
+          queries: security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{matrix.language}}"
+
+      - name: Upload SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ../results/${{ matrix.language }}.sarif
+
+      - name: Generate security report
+        if: always()
+        run: |
+          echo "# CodeQL Security Analysis Report" > security-report.md
+          echo "" >> security-report.md
+          echo "**Analysis Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> security-report.md
+          echo "**Language**: ${{ matrix.language }}" >> security-report.md
+          echo "**Branch**: ${{ github.ref_name }}" >> security-report.md
+          echo "**Commit**: ${{ github.sha }}" >> security-report.md
+          echo "" >> security-report.md
+          echo "## Analysis Results" >> security-report.md
+          echo "CodeQL analysis completed. Check the Security tab for detailed results." >> security-report.md
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-security-report-${{ matrix.language }}
+          path: security-report.md
+          retention-days: 30

@@ -1,0 +1,231 @@
+/* Context Menu Styles */
+.context-menu {
+  position: fixed;
+  z-index: 3000;
+  min-width: 200px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  padding: 6px 0;
+  animation: context-menu-appear 0.15s ease-out;
+  user-select: none;
+}
+
+@keyframes context-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.context-menu-item:not(.disabled):hover {
+  background: rgba(59, 130, 246, 0.8);
+  color: white;
+}
+
+.context-menu-item:not(.disabled):active {
+  background: rgba(59, 130, 246, 0.9);
+}
+
+.context-menu-item.disabled {
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 16px;
+  gap: 12px;
+}
+
+.menu-item-icon {
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-item-shortcut {
+  font-size: 12px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+.menu-item-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 12px;
+}
+
+/* Submenu Support (Future Enhancement) */
+.context-menu-item:has(.menu-item-arrow):hover .menu-item-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Focus States for Keyboard Navigation */
+.context-menu-item:focus {
+  outline: none;
+  background: rgba(59, 130, 246, 0.6);
+  color: white;
+}
+
+.context-menu-item:focus .menu-item-shortcut {
+  opacity: 0.9;
+}
+
+/* Animation for different types */
+.context-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: white;
+}
+
+.context-menu-item.success:hover {
+  background: rgba(16, 185, 129, 0.8);
+  color: white;
+}
+
+.context-menu-item.warning:hover {
+  background: rgba(245, 158, 11, 0.8);
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .context-menu {
+    min-width: 180px;
+    font-size: 16px; /* Larger touch targets */
+  }
+
+  .menu-item-content {
+    padding: 12px 16px;
+  }
+
+  .context-menu-item {
+    font-size: 15px;
+  }
+
+  .menu-item-icon {
+    font-size: 16px;
+    width: 18px;
+  }
+
+  .menu-item-shortcut {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .context-menu {
+    min-width: 160px;
+    max-width: calc(100vw - 40px);
+  }
+
+  .menu-item-label {
+    font-size: 14px;
+  }
+
+  .menu-item-shortcut {
+    display: none; /* Hide shortcuts on very small screens */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .context-menu {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+
+  .context-menu-item:not(.disabled):hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .context-menu-separator {
+    background: rgba(255, 255, 255, 0.6);
+    height: 2px;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .context-menu {
+    animation: none;
+  }
+
+  .context-menu-item {
+    transition: none;
+  }
+
+  .menu-item-arrow {
+    transform: none !important;
+  }
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: light) {
+  .context-menu {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .context-menu-item {
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .context-menu-item.disabled {
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  .context-menu-separator {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .menu-item-shortcut {
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .menu-item-arrow {
+    color: rgba(0, 0, 0, 0.6);
+  }
+}

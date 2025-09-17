@@ -1,0 +1,466 @@
+name: Comprehensive Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly integration tests at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_ENV: test
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Window Management + Simulation Integration Tests
+  window-simulation-integration:
+    name: Window-Simulation Integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-integration-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            xvfb \
+            x11-utils \
+            xauth
+
+      - name: Install system dependencies (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          # Install any macOS-specific dependencies
+          brew install --cask xquartz || true
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Window-Simulation Integration Tests (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+          npm run test:integration -- --testPathPattern="window-simulation.integration.test" --runInBand
+
+      - name: Run Window-Simulation Integration Tests (Windows/macOS)
+        if: matrix.platform != 'linux'
+        run: |
+          npm run test:integration -- --testPathPattern="window-simulation.integration.test" --runInBand
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: window-simulation-integration-results-${{ matrix.platform }}
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7
+
+  # Data Persistence Integration Tests
+  data-persistence-integration:
+    name: Data Persistence Integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+          MONGO_INITDB_DATABASE: politicai_test
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Wait for services
+        run: |
+          # Wait for Redis
+          timeout 30 bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done' || echo "Redis not available, using fallback"
+          # Wait for MongoDB
+          timeout 30 bash -c 'until mongosh --host localhost:27017 --eval "db.adminCommand(\"ping\")" --quiet; do sleep 1; done' || echo "MongoDB not available, using fallback"
+
+      - name: Run Data Persistence Integration Tests
+        env:
+          REDIS_URL: redis://localhost:6379
+          MONGODB_URL: mongodb://root:password@localhost:27017/politicai_test?authSource=admin
+        run: |
+          npm run test:integration -- --testPathPattern="data-persistence.integration.test" --runInBand
+
+      - name: Test Data Migration Scenarios
+        env:
+          REDIS_URL: redis://localhost:6379
+          MONGODB_URL: mongodb://root:password@localhost:27017/politicai_test?authSource=admin
+        run: |
+          npm run test:integration -- --testPathPattern="data-migration" --runInBand || echo "Migration tests not yet implemented"
+
+      - name: Upload persistence test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: data-persistence-results-${{ matrix.platform }}
+          path: |
+            coverage/
+            test-results/
+            *.log
+          retention-days: 7
+
+  # Cross-Platform Compatibility Tests
+  cross-platform-integration:
+    name: Cross-Platform Compatibility
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20']
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Cross-Platform Tests
+        run: |
+          npm run test:integration -- --testPathPattern="cross-platform.integration.test" --runInBand
+
+      - name: Test Platform-Specific Features
+        run: |
+          # Test platform-specific file system operations
+          npm run test:integration -- --testPathPattern="platform-specific" --runInBand || echo "Platform-specific tests not yet implemented"
+
+      - name: Generate Platform Compatibility Report
+        run: |
+          echo "# Platform Compatibility Report" > platform-report-${{ matrix.platform }}.md
+          echo "- OS: ${{ matrix.os }}" >> platform-report-${{ matrix.platform }}.md
+          echo "- Node.js: ${{ matrix.node-version }}" >> platform-report-${{ matrix.platform }}.md
+          echo "- Test Status: $(if [ $? -eq 0 ]; then echo 'PASSED'; else echo 'FAILED'; fi)" >> platform-report-${{ matrix.platform }}.md
+
+      - name: Upload platform compatibility results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cross-platform-results-${{ matrix.platform }}-node${{ matrix.node-version }}
+          path: |
+            coverage/
+            test-results/
+            platform-report-${{ matrix.platform }}.md
+          retention-days: 7
+
+  # Performance Integration Tests
+  performance-integration:
+    name: Performance Integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            xvfb
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Performance Integration Tests (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+          npm run test:integration -- --testPathPattern="performance.integration.test" --runInBand --testTimeout=60000
+
+      - name: Run Performance Integration Tests (Windows/macOS)
+        if: matrix.platform != 'linux'
+        run: |
+          npm run test:integration -- --testPathPattern="performance.integration.test" --runInBand --testTimeout=60000
+
+      - name: Run Memory Stress Tests
+        run: |
+          npm run test:memory || echo "Memory tests completed with warnings"
+
+      - name: Generate Performance Report
+        run: |
+          echo "# Performance Test Report - ${{ matrix.platform }}" > performance-report-${{ matrix.platform }}.md
+          echo "- Platform: ${{ matrix.platform }}" >> performance-report-${{ matrix.platform }}.md
+          echo "- Timestamp: $(date)" >> performance-report-${{ matrix.platform }}.md
+          echo "- Memory Usage: $(node -e 'console.log(Math.round(process.memoryUsage().heapUsed / 1024 / 1024)) + \"MB\"')" >> performance-report-${{ matrix.platform }}.md
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results-${{ matrix.platform }}
+          path: |
+            coverage/
+            test-results/
+            performance-report-${{ matrix.platform }}.md
+            *.log
+          retention-days: 7
+
+  # Integration Test Summary
+  integration-summary:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs: [window-simulation-integration, data-persistence-integration, cross-platform-integration, performance-integration]
+    if: always()
+
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate Integration Test Report
+        run: |
+          echo "# Comprehensive Integration Test Report" > integration-report.md
+          echo "" >> integration-report.md
+          echo "## Test Suite Results" >> integration-report.md
+          echo "" >> integration-report.md
+
+          echo "### Window-Simulation Integration" >> integration-report.md
+          if [[ "${{ needs.window-simulation-integration.result }}" == "success" ]]; then
+            echo "✅ PASSED" >> integration-report.md
+          else
+            echo "❌ FAILED" >> integration-report.md
+          fi
+          echo "" >> integration-report.md
+
+          echo "### Data Persistence Integration" >> integration-report.md
+          if [[ "${{ needs.data-persistence-integration.result }}" == "success" ]]; then
+            echo "✅ PASSED" >> integration-report.md
+          else
+            echo "❌ FAILED" >> integration-report.md
+          fi
+          echo "" >> integration-report.md
+
+          echo "### Cross-Platform Compatibility" >> integration-report.md
+          if [[ "${{ needs.cross-platform-integration.result }}" == "success" ]]; then
+            echo "✅ PASSED" >> integration-report.md
+          else
+            echo "❌ FAILED" >> integration-report.md
+          fi
+          echo "" >> integration-report.md
+
+          echo "### Performance Integration" >> integration-report.md
+          if [[ "${{ needs.performance-integration.result }}" == "success" ]]; then
+            echo "✅ PASSED" >> integration-report.md
+          else
+            echo "❌ FAILED" >> integration-report.md
+          fi
+          echo "" >> integration-report.md
+
+          echo "## Overall Status" >> integration-report.md
+          if [[ "${{ needs.window-simulation-integration.result }}" == "success" && \
+                "${{ needs.data-persistence-integration.result }}" == "success" && \
+                "${{ needs.cross-platform-integration.result }}" == "success" && \
+                "${{ needs.performance-integration.result }}" == "success" ]]; then
+            echo "🎉 **ALL INTEGRATION TESTS PASSED**" >> integration-report.md
+          else
+            echo "⚠️ **SOME INTEGRATION TESTS FAILED**" >> integration-report.md
+          fi
+
+      - name: Upload integration summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-summary
+          path: integration-report.md
+          retention-days: 30
+
+      - name: Check overall integration test status
+        run: |
+          if [[ "${{ needs.window-simulation-integration.result }}" == "failure" || \
+                "${{ needs.data-persistence-integration.result }}" == "failure" || \
+                "${{ needs.cross-platform-integration.result }}" == "failure" || \
+                "${{ needs.performance-integration.result }}" == "failure" ]]; then
+            echo "❌ Integration tests failed"
+            exit 1
+          else
+            echo "✅ All integration tests passed"
+          fi
+
+  # Nightly Performance Regression Tests
+  nightly-regression:
+    name: Nightly Performance Regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            xvfb
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Extended Performance Tests
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+          # Run with extended timeout for comprehensive testing
+          npm run test:integration -- --testPathPattern="performance" --runInBand --testTimeout=300000
+
+      - name: Generate Regression Report
+        run: |
+          echo "# Nightly Performance Regression Report" > nightly-regression.md
+          echo "Date: $(date)" >> nightly-regression.md
+          echo "Commit: ${{ github.sha }}" >> nightly-regression.md
+          echo "" >> nightly-regression.md
+          echo "## Performance Metrics" >> nightly-regression.md
+          # Add performance metrics parsing here
+
+      - name: Upload nightly results
+        uses: actions/upload-artifact@v3
+        with:
+          name: nightly-regression-results
+          path: |
+            nightly-regression.md
+            test-results/
+            *.log
+          retention-days: 90

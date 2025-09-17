@@ -1,0 +1,257 @@
+# Political Desktop OS Simulation - Git Ignore Rules
+
+# ===============================
+# ENVIRONMENT AND SECRETS
+# ===============================
+
+# Environment files with actual secrets
+.env
+.env.local
+.env.production
+.env.staging
+
+# Keep example files but ignore actual configs
+!.env.example
+!.env.development
+
+# API Keys and sensitive configuration
+config/secrets.json
+config/api-keys.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ===============================
+# DEPENDENCIES AND BUILD
+# ===============================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Rust dependencies and build
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Python dependencies (if using Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# ===============================
+# BUILD OUTPUTS AND ARTIFACTS
+# ===============================
+
+# Frontend build outputs
+dist/
+build/
+.next/
+out/
+
+# Tauri build outputs
+src-tauri/target/
+src-tauri/gen/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# ===============================
+# DATABASES AND DATA
+# ===============================
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps and backups
+backups/
+dumps/
+*.sql
+*.bak
+
+# MongoDB data directory (if running locally)
+data/
+mongo-data/
+
+# ===============================
+# LOGS AND MONITORING
+# ===============================
+
+# Application logs
+logs/
+*.log
+*.log.*
+
+# Performance and debug files
+*.trace
+*.prof
+*.heap
+
+# Crash dumps
+*.dmp
+core.*
+
+# ===============================
+# TEMPORARY AND CACHE FILES
+# ===============================
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.nuxt/
+
+# ===============================
+# TESTING AND COVERAGE
+# ===============================
+
+# Test coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Test artifacts
+test-results/
+screenshots/
+videos/
+
+# Jest cache
+.jest/
+
+# ===============================
+# DOCUMENTATION BUILDS
+# ===============================
+
+# Generated documentation
+docs/_build/
+site/
+
+# ===============================
+# DEPLOYMENT AND DISTRIBUTION
+# ===============================
+
+# Distribution packages
+*.tar.gz
+*.zip
+*.rar
+
+# Deployment configurations (may contain secrets)
+docker-compose.override.yml
+k8s/secrets/
+helm/values.production.yaml
+
+# ===============================
+# DEVELOPMENT TOOLS
+# ===============================
+
+# Package manager lock files (keep yarn.lock, remove others)
+package-lock.json
+
+# Tool configurations with local settings
+.eslintcache
+.stylelintcache
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ===============================
+# CLOUD AND EXTERNAL SERVICES
+# ===============================
+
+# AWS credentials
+.aws/
+
+# Google Cloud credentials
+gcloud/
+*.json
+
+# Azure credentials
+.azure/
+
+# ===============================
+# GAME SPECIFIC
+# ===============================
+
+# Save files and user data
+saves/
+user-data/
+preferences/
+
+# Generated game content
+generated-content/
+ai-generated/
+
+# Performance profiling data
+profiles/
+benchmarks/
+
+# ===============================
+# RESEARCH AND PLANNING
+# ===============================
+
+# Research notes (keep structured research)
+notes/
+scratch/
+experiments/
+
+# Personal development notes
+personal-notes.md
+todo-personal.md
+
+# ===============================
+# MISC
+# ===============================
+
+# Vim swap files
+*.swp
+*.swo
+
+# Emacs backup files
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+*.lnk
+
+# Linux
+*~

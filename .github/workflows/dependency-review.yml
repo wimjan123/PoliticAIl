@@ -1,0 +1,52 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0, AGPL-1.0, AGPL-3.0
+          comment-summary-in-pr: true
+
+      - name: Check for security vulnerabilities
+        run: |
+          npm audit --audit-level high
+          if [ $? -ne 0 ]; then
+            echo "❌ High or critical security vulnerabilities found"
+            echo "Please run 'npm audit fix' to resolve issues"
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
+
+      - name: License compliance check
+        run: |
+          # Install license checker
+          npm install -g license-checker
+
+          # Check licenses
+          license-checker --summary --excludePrivatePackages --failOn "GPL-2.0;GPL-3.0;LGPL-2.0;LGPL-2.1;LGPL-3.0;AGPL-1.0;AGPL-3.0"
+
+          if [ $? -ne 0 ]; then
+            echo "❌ License compliance issues found"
+            echo "Only MIT, Apache-2.0, BSD variants, and ISC licenses are allowed"
+            exit 1
+          else
+            echo "✅ All dependencies use approved licenses"
+          fi
