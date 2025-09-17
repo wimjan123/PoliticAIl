@@ -113,8 +113,8 @@ jobs:
       - name: Install macOS dependencies
         if: matrix.platform == 'macos'
         run: |
-          # Install additional tools if needed
-          brew install --quiet
+          # No additional dependencies needed for Tauri macOS builds
+          echo "macOS dependencies check complete - using system defaults"
 
       # Build process
       - name: Install Node.js dependencies
