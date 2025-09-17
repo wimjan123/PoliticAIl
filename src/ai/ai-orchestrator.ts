@@ -136,6 +136,9 @@ export class AIOrchestrater {
     personalityVariation?: number
   ): AIPolitician {
     const archetype = PERSONALITY_ARCHETYPES[archetypeName];
+    if (!archetype) {
+      throw new Error(`Unknown personality archetype: ${archetypeName}`);
+    }
 
     // Generate personality traits with optional variation
     const personalityTraits = personalityVariation
@@ -159,14 +162,14 @@ export class AIOrchestrater {
     // Create AI politician instance
     const aiPolitician: AIPolitician = {
       politician,
-      archetype,
+      archetype: archetypeName,
       decisionEngine,
       performance: {
         decisions_made: 0,
         approval_changes: [],
         consistency_scores: [],
       },
-      goals: this.generateInitialGoals(politician, archetype)
+      goals: this.generateInitialGoals(politician, archetypeName)
     };
 
     this.aiPoliticians.set(politician.id, aiPolitician);
@@ -286,7 +289,7 @@ export class AIOrchestrater {
           const aiPolitician = respondingPoliticians[i];
           const response = coordinatedResponses[i];
 
-          if (response) {
+          if (response && aiPolitician) {
             aiPolitician.lastResponse = response;
             tickResult.responses.push({
               politician_id: aiPolitician.politician.id,
@@ -575,7 +578,7 @@ export class AIOrchestrater {
   private getRespondingPoliticians(event: SimulationEvent): AIPolitician[] {
     const responding: AIPolitician[] = [];
 
-    for (const [id, aiPolitician] of this.aiPoliticians) {
+    for (const [_id, aiPolitician] of this.aiPoliticians) {
       // Check if politician should respond based on event type and their role/interests
       if (this.shouldPoliticianRespondToEvent(aiPolitician, event)) {
         responding.push(aiPolitician);
@@ -612,16 +615,20 @@ export class AIOrchestrater {
   /**
    * Determine if politicians should coordinate their response
    */
-  private shouldCoordinateResponse(event: SimulationEvent, politicians: AIPolitician[]): boolean {
+  private shouldCoordinateResponse(_event: SimulationEvent, politicians: AIPolitician[]): boolean {
     if (politicians.length < 2) return false;
 
     // Check if politicians are allies
     let alliesCount = 0;
     for (let i = 0; i < politicians.length; i++) {
       for (let j = i + 1; j < politicians.length; j++) {
+        const politicianI = politicians[i];
+        const politicianJ = politicians[j];
+        if (!politicianI || !politicianJ) continue;
+
         const relationship = this.relationshipManager.getRelationship(
-          politicians[i].politician.id,
-          politicians[j].politician.id
+          politicianI.politician.id,
+          politicianJ.politician.id
         );
         if (relationship && relationship.current_score > 50) {
           alliesCount++;
@@ -694,8 +701,8 @@ export class AIOrchestrater {
       });
     }
 
-    // Power/influence goal for ambitious politicians
-    if (archetype.traits.ambition > 70) {
+    // Power/influence goal for risk-taking politicians
+    if (archetype.traits.risk_tolerance > 70) {
       goals.push({
         type: 'power',
         target: 'increase_influence',
