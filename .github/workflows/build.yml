@@ -191,6 +191,11 @@ jobs:
           ls -la
           echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
 
+          # Ensure we're in the correct working directory
+          cd "${{ github.workspace }}" || cd "$(pwd)"
+          echo "After cd - Current working directory: $(pwd)"
+          echo "After cd - package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
+
           if [ "${{ matrix.platform }}" = "macos" ]; then
             export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
           fi
@@ -202,6 +207,11 @@ jobs:
           echo "Current working directory: $(pwd)"
           echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
           echo "src-tauri exists: $(test -d src-tauri && echo 'YES' || echo 'NO')"
+
+          # Ensure we're in the correct working directory
+          cd "${{ github.workspace }}" || cd "$(pwd)"
+          echo "After cd - Current working directory: $(pwd)"
+          echo "After cd - package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
 
           if [ "${{ matrix.platform }}" = "macos" ]; then
             export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
