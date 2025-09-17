@@ -84,6 +84,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       # Platform-specific dependencies
       - name: Install Linux dependencies
@@ -117,6 +118,14 @@ jobs:
           echo "macOS dependencies check complete - using system defaults"
 
       # Build process
+      - name: Verify repository structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository contents:"
+          ls -la
+          echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
+          echo "package-lock.json exists: $(test -f package-lock.json && echo 'YES' || echo 'NO')"
+
       - name: Install Node.js dependencies
         run: npm ci
 
