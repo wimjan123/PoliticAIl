@@ -68,6 +68,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -83,8 +85,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          registry-url: 'https://registry.npmjs.org'
 
       # Platform-specific dependencies
       - name: Install Linux dependencies
@@ -125,9 +126,26 @@ jobs:
           ls -la
           echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
           echo "package-lock.json exists: $(test -f package-lock.json && echo 'YES' || echo 'NO')"
+          if [ -f package.json ]; then
+            echo "package.json content preview:"
+            head -10 package.json
+          fi
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install Node.js dependencies
-        run: npm ci
+        run: |
+          echo "About to run npm ci..."
+          echo "Working directory: $(pwd)"
+          echo "npm version: $(npm --version)"
+          echo "node version: $(node --version)"
+          npm ci
 
       - name: Build frontend
         run: npm run build
