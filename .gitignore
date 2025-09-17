@@ -176,7 +176,8 @@ helm/values.production.yaml
 # ===============================
 
 # Package manager lock files (keep yarn.lock, remove others)
-package-lock.json
+# package-lock.json should be committed for consistent builds
+# package-lock.json
 
 # Tool configurations with local settings
 .eslintcache
