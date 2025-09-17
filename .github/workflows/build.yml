@@ -186,13 +186,27 @@ jobs:
       - name: Build frontend
         run: |
           echo "Building frontend for ${{ matrix.platform }}..."
+          echo "Current working directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
+
           if [ "${{ matrix.platform }}" = "macos" ]; then
             export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
           fi
           npm run build
 
       - name: Build Tauri application
-        run: ${{ matrix.build_script }}
+        run: |
+          echo "Building Tauri application for ${{ matrix.platform }}..."
+          echo "Current working directory: $(pwd)"
+          echo "package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
+          echo "src-tauri exists: $(test -d src-tauri && echo 'YES' || echo 'NO')"
+
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
+          fi
+          ${{ matrix.build_script }}
 
       # Artifact preparation and upload
       - name: Prepare artifacts (Linux)
