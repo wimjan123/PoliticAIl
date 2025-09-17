@@ -141,11 +141,28 @@ jobs:
 
       - name: Install Node.js dependencies
         run: |
-          echo "About to run npm ci..."
+          echo "About to run npm installation..."
           echo "Working directory: $(pwd)"
           echo "npm version: $(npm --version)"
           echo "node version: $(node --version)"
-          npm ci
+          echo "Platform: ${{ matrix.platform }}"
+
+          # Configure npm for better memory handling and timeouts
+          npm config set maxsockets 1
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+
+          # Use different strategies for different platforms
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            echo "Using macOS-optimized npm installation..."
+            # Increase Node.js memory limit and use npm install for macOS
+            export NODE_OPTIONS="--max-old-space-size=8192"
+            npm install --no-audit --no-fund --prefer-offline
+          else
+            echo "Using standard npm ci..."
+            npm ci
+          fi
 
       - name: Build frontend
         run: npm run build
