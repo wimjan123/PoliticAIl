@@ -157,15 +157,39 @@ jobs:
           if [ "${{ matrix.platform }}" = "macos" ]; then
             echo "Using macOS-optimized npm installation..."
             # Increase Node.js memory limit and use npm install for macOS
-            export NODE_OPTIONS="--max-old-space-size=8192"
-            npm install --no-audit --no-fund --prefer-offline
+            export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
+            export npm_config_progress=false
+            export npm_config_loglevel=error
+
+            # Clear npm cache to ensure clean state
+            npm cache clean --force || true
+
+            # Install dependencies with more aggressive timeout and retry settings
+            npm install \
+              --no-audit \
+              --no-fund \
+              --prefer-offline \
+              --no-optional \
+              --ignore-scripts \
+              --maxsockets=1 \
+              --timeout=600000 \
+              --registry=https://registry.npmjs.org/
+
+            # Run install scripts separately if needed
+            echo "Running postinstall scripts..."
+            npm rebuild --silent || echo "Warning: Some native modules failed to rebuild"
           else
             echo "Using standard npm ci..."
             npm ci
           fi
 
       - name: Build frontend
-        run: npm run build
+        run: |
+          echo "Building frontend for ${{ matrix.platform }}..."
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            export NODE_OPTIONS="--max-old-space-size=8192 --no-warnings"
+          fi
+          npm run build
 
       - name: Build Tauri application
         run: ${{ matrix.build_script }}
