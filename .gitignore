@@ -199,6 +199,11 @@ playwright/.cache/
 gcloud/
 *.json
 
+# IMPORTANT: Allow essential project files
+!package.json
+!tsconfig.json
+!tsconfig.*.json
+
 # Azure credentials
 .azure/
 
